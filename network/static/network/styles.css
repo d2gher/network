@@ -79,3 +79,15 @@ html {
     flex-direction: column;
     justify-items: center;
 }
+
+.card-body {
+    background-color: rgb(173, 248, 248);
+    border-radius: 10px;
+    width: 50%;
+    margin: 10px;
+}
+
+.profile-heading {
+    padding: 10px;
+    display: inline-block;
+}

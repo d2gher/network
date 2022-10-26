@@ -1,3 +1,4 @@
+from urllib.request import HTTPRedirectHandler
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
@@ -88,3 +89,18 @@ def posts(request):
             })
 
         return HttpResponseRedirect("/")    
+
+def profile(request, username):
+    try: 
+        user = User.objects.get(username=username)
+        posts = Post.objects.all().filter(user=user)
+        
+    except:
+        return render(request, "network/profile.html", {
+        "message": "User doesn't exist"
+    })      
+
+    return render(request, "network/profile.html", {
+        "posts": posts,
+        "username": username
+    })

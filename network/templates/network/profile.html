@@ -1,0 +1,22 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+    <h3 class="profile-heading">{{ username }}</h3>
+    {% if user.is_authenticated %}
+        {% if user.username != username %}
+            <a>follow</a>
+        {% endif %}
+    {% endif %}
+        {% for post in posts %} 
+            <div class="card-body">
+                <h5 class="card-title">{{ post.user }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{post.timestamp}}</h6>
+                <h5 class="card-subtitle mb-2 text-muted">{{post.body}}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{post.likes}}</h6>
+            </div>
+        {% endfor %}
+
+    {% if message %}
+        <div>{{ message }}</div>
+    {% endif %}
+{% endblock %}
