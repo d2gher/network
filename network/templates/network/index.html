@@ -1,5 +1,34 @@
 {% extends "network/layout.html" %}
 
 {% block body %}
-    TODO
+    {% if user.is_authenticated %}
+        <div id="overlay">
+            <div id="new-post">
+                <div id="new-post-title">
+                    New post
+                    <span id="close-new-post">&#10005;</span>
+                </div>
+                <div class="line"></div>
+                <form action="{% url 'posts' %}" method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <textarea id="post-content" autofocus id="new-post-content" class="form-control" type="text" name="body" placeholder="What's on your mind?"></textarea>
+                    </div>
+                    <div class="line"></div>
+                    <div id="post-button-div">
+                        <input id="post-button" class="btn btn-primary" type="submit" value="Post"></div>
+                </form>
+            </div>
+        </div>
+        <div id="post-popup">
+            <button id="post-popup-button" class="btn btn-primary" type="submit">New post</button>
+        </div>
+        {% for post in posts %} 
+            {{ post.user }}
+        {% endfor %}
+    {% endif %}
+
+    {% if message %}
+        <div>{{ message }}</div>
+    {% endif %}
 {% endblock %}
