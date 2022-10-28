@@ -4,7 +4,16 @@
     <h3 class="profile-heading">{{ username }}</h3>
     {% if user.is_authenticated %}
         {% if user.username != username %}
-            <a>follow</a>
+            <form action="/follow/{{username}}" method="post">
+                {% csrf_token %}
+                {% if following %}
+                    <input name="action" value="unfollow" hidden>
+                    <input type="submit" value="Unfollow">
+                {% else %}
+                    <input name="action" value="follow" hidden>
+                    <input type="submit" value="Follow">
+                {% endif %}    
+            </form>
         {% endif %}
     {% endif %}
         {% for post in posts %} 
