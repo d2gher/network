@@ -4,20 +4,24 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.core.paginator import Paginator
 
 from .models import User, Post, Follow
 
 
 def index(request):
     posts = []
+    page_number = 1
     try: 
-        posts = Post.objects.all()
-    except: 
-        return
+        posts = Post.objects.all().order_by('-timestamp')
+        posts = Paginator(posts, "2") 
+        pages_len = posts.num_pages
+        page_number = request.GET.get('page')
+        page_objs = posts.get_page(page_number)
+        return render(request, "network/index.html", { "posts": page_objs, "pages_len": range(pages_len) })
 
-    return render(request, "network/index.html", {
-        "posts": posts 
-    })
+    except: 
+        return render(request, "network/index.html", { "message": "No posts found" })
 
 def login_view(request):
     if request.method == "POST":

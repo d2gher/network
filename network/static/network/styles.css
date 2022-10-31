@@ -91,3 +91,7 @@ html {
     padding: 10px;
     display: inline-block;
 }
+
+.pagination {
+    padding-top: 10px;
+}
