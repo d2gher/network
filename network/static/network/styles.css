@@ -88,10 +88,26 @@ html {
 }
 
 .profile-heading {
-    padding: 10px;
+    padding: 10px 0 0 10px;
     display: inline-block;
 }
 
 .pagination {
-    padding-top: 10px;
+    padding-top: 10px !important;
+}
+
+.btn.btn-primary {
+    margin-top: 10px;
+    display: inline;
+}
+
+.following-button {
+    margin-left: 10px;
+}
+
+.profile-button {
+    text-decoration: none;
+    font-size: 22px;
+    color: black;
+    font-weight: bold;
 }

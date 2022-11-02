@@ -37,11 +37,22 @@
             </ul>
         </nav>
         {% for post in posts %}
-            <div class="card-body">
-                <h5 class="card-title">{{post.user}}</h5>
+            <div id="post-{{post.id}}" class="card-body">
+                <a class="profile-button" href="/{{post.user}}" class="card-title">{{post.user}}</a>
                 <h6 class="card-subtitle mb-2 text-muted">{{post.timestamp}}</h6>
                 <h5 class="card-subtitle mb-2 text-muted">{{post.body}}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">{{post.likes}}</h6>
+                <h6 id="like-{{post.id}}" class="card-subtitle mb-2 text-muted">{{post.likes}} Likes</h6>
+                {% load stringfy %} 
+                {% if user.username|to_str == post.user|to_str %}
+                    <input class="btn btn-primary" type="submit" value="Edit" onclick="editPost({{post.id}})">
+                {% endif %}
+                
+                {% if post.liked %}
+                    <input id="likes-{{post.id}}" class="btn btn-primary" type="submit" value="Unlike" onclick="liked({{post.id}});">
+                {% else %}
+                    <input id="likes-{{post.id}}" class="btn btn-primary" type="submit" value="Like" onclick="liked({{post.id}});">
+                {% endif %}    
+                
             </div>
         {% endfor %}
     {% endif %}

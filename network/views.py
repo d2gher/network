@@ -1,3 +1,5 @@
+from ast import parse
+from telnetlib import STATUS
 from urllib.request import HTTPRedirectHandler
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
@@ -5,19 +7,32 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+import json
+from django.shortcuts import redirect
 
-from .models import User, Post, Follow
+from .models import Like, User, Post, Follow
 
+paginator_limit = 10
 
 def index(request):
     posts = []
     page_number = 1
     try: 
+        user = User.objects.get(username=request.user.username)
         posts = Post.objects.all().order_by('-timestamp')
-        posts = Paginator(posts, "2") 
+        posts = Paginator(posts, paginator_limit) 
         pages_len = posts.num_pages
         page_number = request.GET.get('page')
         page_objs = posts.get_page(page_number)
+        for post in page_objs:
+            try: 
+                Like.objects.get(user=user, post=post)
+                setattr(post, "liked", True)
+            except:
+                setattr(post, "liked", False)    
+
         return render(request, "network/index.html", { "posts": page_objs, "pages_len": range(pages_len) })
 
     except: 
@@ -74,7 +89,8 @@ def register(request):
     else:
         return render(request, "network/register.html")
 
-
+@csrf_exempt
+@login_required
 def posts(request):
     if request.method == "POST":
         if not (request.user.is_authenticated):
@@ -93,11 +109,40 @@ def posts(request):
 
         return HttpResponseRedirect(reverse("index"))
 
+    if request.method == "PUT":
+        data = json.loads(request.body)
+        try: 
+            post = Post.objects.get(id=data.get("id"))
+            if request.user.username != str(post.user):
+                raise Exception("The loged in user isn't the owner of the post")
+            post.body = data.get("body")
+            post.save()  
+            return JsonResponse({
+                "error": "Post updated"
+            }, status=200)  
+        except: 
+            return JsonResponse({
+                "error": "PUT Request couldn't be processed."
+            }, status=400) 
+
+    if request.method == "GET":
+        try:
+            post_id = request.GET.get('post')
+            post = Post.objects.get(id=post_id)
+            return JsonResponse({"likes": post.likes}, status=200)
+        except:
+            return JsonResponse({"Error": "Couldn't find the post"}, status=404)    
+
+
 def profile(request, username):
     try: 
         following = False
         user = User.objects.get(username=username)
-        posts = Post.objects.all().filter(user=user)
+        posts = Post.objects.all().filter(user=user).order_by('-timestamp')
+        posts = Paginator(posts, paginator_limit) 
+        pages_len = posts.num_pages
+        page_number = request.GET.get('page')
+        page_objs = posts.get_page(page_number)
     except:
         return render(request, "network/profile.html", {
         "message": "User doesn't exist"
@@ -111,7 +156,7 @@ def profile(request, username):
                 following = True
     except: 
         following = False            
-    return render(request, "network/profile.html", {"posts": posts, "username": username, "following": following})
+    return render(request, "network/profile.html", { "posts": page_objs, "pages_len": range(pages_len), "username": username, "following": following })
     
 def follow(request, username):
     if request.method == "POST":
@@ -152,10 +197,8 @@ def following(request, username=None):
         try: 
             user = User.objects.get(username=request.user.username)
             following = list(Follow.objects.filter(follower=user).values_list('following', flat=True))
-            posts = Post.objects.all()
+            posts = Post.objects.all().order_by('-timestamp')
             posts_list = posts.values()
-            for post in posts:
-                print(post.user)
             if not posts: 
                 return render(request, "network/index.html", { "message": "No posts found" })
 
@@ -166,15 +209,41 @@ def following(request, username=None):
                     post.update({"user": owner})
                     following_posts.append(post)
                     
+            following_posts = Paginator(following_posts, paginator_limit) 
+            pages_len = following_posts.num_pages
+            page_number = request.GET.get('page')
+            page_objs = following_posts.get_page(page_number)
 
-
-            return render(request, "network/index.html", { "posts": following_posts })   
+            return render(request, "network/index.html", { "posts": page_objs, "pages_len": range(pages_len) })   
            
         except: 
             return render(request, "network/index.html", { "message": "No posts found1" })   
 
-        return render(request, "network/index.html", {
-            "posts": posts 
-        })        
+@csrf_exempt
+@login_required
+def likes(request):
+    if request.method == "POST":
+        try: 
+            data = json.loads(request.body)
+            print(data)
+            post_id = data.get("post_id")
+            post = Post.objects.get(id=post_id)
+            user = User.objects.get(username=request.user.username)
+        except: 
+            return JsonResponse({ "error": "Couldn't find user or post" }, status=400)
 
-                
+        try:
+            like = Like.objects.get(post=post, user=user)
+            post.likes -= 1
+            post.save()
+            like.delete()
+            return JsonResponse({ "success": "Post unliked" }, status=200)  
+        except:
+            like = Like(post=post, user=user)
+            like.save()
+            post.likes += 1
+            post.save()
+            return JsonResponse({ "success": "Post liked" }, status=200)  
+    return JsonResponse({ "success": "get out" }, status=200)  
+            
+
